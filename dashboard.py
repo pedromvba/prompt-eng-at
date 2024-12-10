@@ -130,3 +130,43 @@ with tab3:
     except FileNotFoundError:
         st.error("Arquivo sumarizacao_proposicoes.json não encontrado.")
 
+
+    st.subheader("Assistente Virtual da Câmara dos Deputados")
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    # Chat input
+    if prompt := st.chat_input("Faça uma pergunta sobre a Câmara dos Deputados"):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Create assistant response
+        with st.chat_message("assistant"):
+            response = """
+            Como assistente especializado na Câmara dos Deputados, posso ajudar com:
+            - Informações sobre proposições legislativas
+            - Detalhes sobre deputados e partidos
+            - Explicações sobre o processo legislativo
+            - Análise de dados parlamentares
+
+            Com base nos dados disponíveis, posso fornecer insights sobre:
+            - {df_proposicoes.shape[0]} proposições registradas
+            - Tendências legislativas
+            - Atividade parlamentar
+            """
+            st.markdown(response)
+            
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": response})
+

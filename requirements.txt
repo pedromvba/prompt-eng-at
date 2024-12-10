@@ -8,3 +8,7 @@ seaborn==0.13.2
 tiktoken==0.8.0
 streamlit==1.40.2
 pyyaml==6.0.2
+faiss-cpu==1.9.0
+transformers==4.47.0
+torch==2.5.1
+sentence-transformers==3.3.1
