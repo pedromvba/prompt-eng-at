@@ -4,3 +4,4 @@ pandas==2.2.3
 fastparquet==2024.11.0
 google-generativeai==0.8.3
 matplotlib==3.9.3
+seaborn==0.13.2
