@@ -3,6 +3,7 @@ import pandas as pd
 from PIL import Image
 import json
 import yaml
+import matplotlib.pyplot as plt
 
 
 st.set_page_config(page_title="Dados Deputados", page_icon=":chart_with_upwards_trend:")
@@ -71,18 +72,61 @@ with tab1:
     st.write(insights)
 
 
-# with tab2:
-#     st.header("Despesas")
-#     if not despesas_data.empty:
-#         st.dataframe(despesas_data)
-#     else:
-#         st.write("Dados de despesas indisponíveis.")
+with tab2:
+    st.title("Análise de Dados de Deputados")
+
+    
+    st.subheader("Insights Gerais:")
+    try:
+        with open("./data/insights_despesas_deputados.json", "r") as f:
+            insights_despesas = json.load(f)
+            for key, value in insights_despesas.items():
+                st.write(f"{key}: {value}")
+    except FileNotFoundError:
+        st.error("Arquivo insights_despesas_deputados.json não encontrado.")
 
 
-# with tab3:
-#     st.header("Proposições")
-#     if not proposicoes_data.empty:
-#         st.dataframe(proposicoes_data)
-#     else:
-#         st.write("Dados de proposições indisponíveis.")
+    st.subheader("Série Temporal de Despesas:")
+    try:
+        df_despesas = pd.read_parquet("./data/serie_despesas_diárias_deputados.parquet")
+        deputados = df_despesas['nome'].unique()
+        selected_deputado = st.selectbox("Selecione o Deputado:", deputados)
+
+        df_deputado = df_despesas[df_despesas['nome'] == selected_deputado]
+        df_deputado['data_documento'] = pd.to_datetime(df_deputado['data_documento'])
+        df_deputado = df_deputado.sort_values('data_documento')
+
+        fig, ax = plt.subplots(figsize=(10,6))
+        ax.bar(df_deputado['data_documento'], df_deputado['valor_documento'])
+        ax.set_xlabel("Data")
+        ax.set_ylabel("Valor")
+        ax.set_title(f"Despesas do Deputado {selected_deputado}")
+        ax.tick_params(axis='x', rotation=45)
+        st.pyplot(fig)
+
+    except FileNotFoundError:
+        st.error("Arquivo serie_despesas_diárias_deputados.parquet não encontrado.")
+    except Exception as e:
+        st.exception(e)
+
+
+with tab3:
+# Aba Proposições
+
+    st.subheader("Dados das Proposições:")
+    try:
+        df_proposicoes = pd.read_parquet("./data/proposicoes_deputados.parquet")
+        st.dataframe(df_proposicoes)
+    except FileNotFoundError:
+        st.error("Arquivo proposicoes_deputados.parquet não encontrado.")
+
+
+    st.subheader("Sumarização das Proposições:")
+    try:
+        with open("./data/sumarizacao_proposicoes.json", "r") as f:
+            sumarizacao_proposicoes = json.load(f)
+            for key, value in sumarizacao_proposicoes.items():
+                st.write(f"{key}: {value}")
+    except FileNotFoundError:
+        st.error("Arquivo sumarizacao_proposicoes.json não encontrado.")
 
