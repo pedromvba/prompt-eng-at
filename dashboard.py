@@ -8,7 +8,6 @@ import faiss
 import torch
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
-from llm_database import *
 import time
 import numpy as np
 import os
@@ -23,6 +22,54 @@ load_dotenv('.env')
 st.set_page_config(page_title="Dados Deputados", page_icon=":chart_with_upwards_trend:")
 
 st.title("Dados da Câmara dos Deputados")
+
+
+
+# loading chat data
+
+@st.cache_data
+def load_data():
+    # Carregar dados e transformar em texto
+    despesas = pd.read_parquet('./data/serie_despesas_diárias_deputados.parquet')
+    despesas_texto = despesas.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in despesas.columns]),
+                                    axis=1).tolist()
+
+    deputados = pd.read_parquet('./data/deputados.parquet')
+    deputados_texto = deputados.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in deputados.columns]),
+                                       axis=1).tolist()
+
+    proposicoes = pd.read_parquet('./data/proposicoes_deputados.parquet')
+    proposicoes_texto = proposicoes.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in proposicoes.columns]),
+                                          axis=1).tolist()
+
+    despesas_medias = pd.read_csv('./data/despesa_média_por_tipo_de_despesa.csv')
+    despesas_medias_texto = despesas_medias.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in despesas_medias.columns]),
+                                                  axis=1).tolist()
+
+    despesa_total_por_deputado = pd.read_csv('./data/despesa_total_por_deputado.csv')
+    despesa_total_por_deputado_texto = despesa_total_por_deputado.apply(
+        lambda row: ', '.join([f"{col}: {row[col]}" for col in despesa_total_por_deputado.columns]),
+        axis=1).tolist()
+
+    return despesas_texto + deputados_texto + proposicoes_texto + despesas_medias_texto + despesa_total_por_deputado_texto
+
+
+@st.cache_data
+def load_embedding_model(model_name, cache_folder):
+    return SentenceTransformer(model_name, cache_folder=cache_folder)
+
+
+@st.cache_data
+def create_faiss_index(_embedding_model, dados):
+    # Gerar embeddings
+    embeddings_dados = embedding_model.encode(dados)
+    embeddings_dados = np.array(embeddings_dados).astype("float32")
+    
+    # Criar índice FAISS
+    d = embeddings_dados.shape[1]  # Dimensão do embedding
+    index = faiss.IndexFlatL2(d)
+    index.add(embeddings_dados)
+    return index
 
 
 tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Despesas", "Proposições", "Chatbot"])
@@ -146,88 +193,56 @@ with tab3:
 
 
 
-
 with tab4:
-        st.title("Chatbot Câmara dos Deputados")
+    st.title("Chatbot Câmara dos Deputados")
 
-        # Carga da base FAISS
-        despesas = pd.read_parquet('./data/serie_despesas_diárias_deputados.parquet')
-        despesas_texto = despesas.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in despesas.columns]),
-                                        axis=1).tolist()
+    
+    dados = load_data()
+    model_name = 'neuralmind/bert-base-portuguese-cased'
+    llm_model_dir = './data/neuralMind/'
+    embedding_model = load_embedding_model(model_name, llm_model_dir)
 
-        deputados = pd.read_parquet('./data/deputados.parquet')
-        deputados_texto = deputados.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in deputados.columns]),
-                                        axis=1).tolist()
+    
+    if "faiss_index" not in st.session_state:
+        st.write("Estamos preparando os dados da aplicação, por favor aguarde...")
+        st.session_state.faiss_index = create_faiss_index(embedding_model, dados)
 
-        proposicoes = pd.read_parquet('./data/proposicoes_deputados.parquet')
-        proposicoes_texto = proposicoes.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in proposicoes.columns]),
-                                        axis=1).tolist()
+    index = st.session_state.faiss_index
 
-        despesas_medias = pd.read_csv('./data/despesa_média_por_tipo_de_despesa.csv')
-        despesas_medias_texto = despesas_medias.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in despesas_medias.columns]),
-                                        axis=1).tolist()
+    
+    user_prompt = st.chat_input("Hi")
+    if user_prompt:
+        st.chat_message("user").markdown(user_prompt)
 
-        despesa_total_por_deputado = pd.read_csv('./data/despesa_total_por_deputado.csv')
-        despesa_total_por_deputado_texto = despesa_total_por_deputado.apply(lambda row: ', '.join([f"{col}: {row[col]}" for col in despesa_total_por_deputado.columns]),
-                                        axis=1).tolist()
+        
+        query_embedding = embedding_model.encode([user_prompt]).astype("float32")
+        k = 100
+        distances, indices = index.search(query_embedding, k)
 
-        dados = despesas_texto + deputados_texto + proposicoes_texto + despesas_medias_texto + despesa_total_por_deputado_texto
+       
+        db_text = '\n'.join([f"- {dados[indices[0][i]]}" for i in range(k)])
 
-        # model definitions
-        model_name = 'neuralmind/bert-base-portuguese-cased'
-        llm_model_dir = './data/neuralMind/'
-        embedding_model = SentenceTransformer(
-            model_name, 
-            cache_folder=llm_model_dir
-        )
+        llm_prompt = f"""
+        Responda a <pergunta do usuário> considerando as informações disponíveis no banco de dados <database>
+        Leia várias linhas do banco de dados para entender o contexto e fornecer uma resposta relevante.
 
-        # embedding texts
-        embeddings_dados = embedding_model.encode(dados)
-        embeddings_dados = np.array(embeddings_dados).astype("float32")
+        ##
+        <pergunta do usuário>
+        {user_prompt}
 
-        #creating faiss index
-        d = embeddings_dados.shape[1]  # embedding dimension
-        index = faiss.IndexFlatL2(d)  # using l2 distance as metric
-        index.add(embeddings_dados) # adding embeddings to index
+        ##
+        <database>
+        {db_text}
+        """
 
 
-        user_prompt = st.chat_input("Hi")
-        if user_prompt is not None:
-            # Display user message in chat message container
-            st.chat_message("user").markdown(user_prompt)
-            # RAG para a base de conhecimento
+        genai.configure(api_key=os.environ["GEMINI_KEY"])
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(llm_prompt).text
 
-            query_embedding = embedding_model.encode([user_prompt]).astype("float32")
-            k=100
-            distances, indices = index.search(query_embedding, k) 
+        
+        with st.chat_message("assistant"):
+            st.markdown(response)
 
-            
-            db_text = '\n'.join([f"- {dados[indices[0][i]]}" for i in range(k)])
-
-      
-
-            llm_prompt = f"""
-
-            Responda a <pergunta do usuário> considerando as informações disponíveis no banco de dados <database>
-            Leia várias linhas do banco de dados para entender o contexto e fornecer uma resposta relevante.
-
-            ##
-            <pergunta do usuário>
-            {user_prompt}
-
-            ##
-            <database>
-            {db_text}
-
-            """
-
-            genai.configure(api_key=os.environ["GEMINI_KEY"])
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(llm_prompt)
-            response = response.text
-
-            # Display assistant response in chat message container
-            with st.chat_message("assistant"):
-                st.markdown(response)
 
 

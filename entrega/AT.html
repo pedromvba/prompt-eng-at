@@ -7547,17 +7547,11 @@ a.anchor-link {
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">functions</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">import</span> <span class="nn">faiss</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">sentence_transformers</span> <span class="kn">import</span> <span class="n">SentenceTransformer</span>
 <span class="kn">from</span> <span class="nn">transformers</span> <span class="kn">import</span> <span class="n">pipeline</span>
-
 <span class="kn">from</span> <span class="nn">diffusers</span> <span class="kn">import</span> <span class="n">DiffusionPipeline</span>
-
-
-
-
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 </pre></div>
@@ -7610,7 +7604,7 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h3 id="a">a<a class="anchor-link" href="#a">¶</a></h3><p><img alt="Diagrama" src="./images/1-diagrama.png"/></p>
+<h3 id="a">a<a class="anchor-link" href="#a">¶</a></h3><p><img alt="Diagrama" src="./images/1-Diagrama.png"/></p>
 </div>
 </div>
 </div>
@@ -9840,18 +9834,21 @@ Lembre-se de adaptar os caminhos dos arquivos caso necessário.  Se você tiver 
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="a">a<a class="anchor-link" href="#a">¶</a></h3><h4 id="Stable-Diffusion">Stable Diffusion<a class="anchor-link" href="#Stable-Diffusion">¶</a></h4><h5 id="Arquitetura-e-Funcionamento:">Arquitetura e Funcionamento:<a class="anchor-link" href="#Arquitetura-e-Funcionamento:">¶</a></h5><p>Baseado no modelo de difusão latente para gerar imagens. A ideia é começar a imagem com um ruído e ao longo de etapas incrementais ir ajustando a imagem ao desejado pelo usuário.</p>
 <h5 id="Vantagens:">Vantagens:<a class="anchor-link" href="#Vantagens:">¶</a></h5><p>Modelo open-source</p>
-<p>Exige menos requisitos computacionais para operar .</p>
+<p>Exige menos requisitos computacionais para operar.</p>
+<p>Pode ser executado localmente, permitindo que seja feito um fine tunning.</p>
 <h5 id="Desvantagens:">Desvantagens:<a class="anchor-link" href="#Desvantagens:">¶</a></h5><p>Ainda exige grande poder de processamento, dependendo de GPUs</p>
 <p>Menor capacidade de gerar imagens complexas que necessitem de pequenos ajustes.</p>
+<p>Configuração mais complexa.</p>
 <h4 id="DALL-E">DALL-E<a class="anchor-link" href="#DALL-E">¶</a></h4><h5 id="Arquitetura-e-Funcionamento:">Arquitetura e Funcionamento:<a class="anchor-link" href="#Arquitetura-e-Funcionamento:">¶</a></h5><p>Baseado em transformers que prevêem os tokens visuais (pequenas partes da imagem) a partir dos tokens de texto (prompt)</p>
 <h5 id="Vantagens:">Vantagens:<a class="anchor-link" href="#Vantagens:">¶</a></h5><p>A combinação entre imagem e texto permite imagens que capturam muito bem o que foi solicitado.</p>
 <p>Possui uma boa capcidade para gerar imagens complexas respondendo bem a pequenos ajustes</p>
 <h5 id="Desvantagens:">Desvantagens:<a class="anchor-link" href="#Desvantagens:">¶</a></h5><p>Custo para utilizar em escala, visto que é proprietário</p>
+<p>Menos refinado que o MidJourney</p>
 <h4 id="Mid-Jouney">Mid Jouney<a class="anchor-link" href="#Mid-Jouney">¶</a></h4><h5 id="Arquitetura-e-Funcionamento:">Arquitetura e Funcionamento:<a class="anchor-link" href="#Arquitetura-e-Funcionamento:">¶</a></h5><p>Baseado em arquitetura híbrida e proprietária com alto foco na estética da arte.</p>
 <h5 id="Vantagens:">Vantagens:<a class="anchor-link" href="#Vantagens:">¶</a></h5><p>Produz imagens mais refinadas e bonitas.</p>
 <p>Possui integração com o discord o que facilita o uso.</p>
 <h5 id="Desvantagens:">Desvantagens:<a class="anchor-link" href="#Desvantagens:">¶</a></h5><p>Funciona somente via discord</p>
-<p>Poucos detalhes técnicos divulgados</p>
+<p>Menor precisão para descrições técnicas detalhadas.</p>
 </div>
 </div>
 </div>
